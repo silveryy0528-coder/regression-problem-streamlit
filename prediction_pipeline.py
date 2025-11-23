@@ -8,9 +8,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_error
+from custom_transformers import RareCategoryGrouper
+
 
 #%% load data
 data_folder = r"C:\Users\YanGuo\Documents\predict-salary-streamlit"
@@ -22,7 +25,9 @@ y = data['CO2_Emissions']
 
 # split data into numerical and categorical columns
 numerical_cols = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
-categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
+make_rare = ['Make']
+transmission_rare = ['Transmission']
+categorical_cols = ['Vehicle_Class']
 
 # %% start the pipeline with encoding
 numerical_pipeline = Pipeline(
@@ -34,7 +39,14 @@ numerical_pipeline = Pipeline(
 categorical_pipeline = Pipeline(
     steps=[
         ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('encoder', OneHotEncoder(handle_unknown='ignore'))
+        ('ohe', OneHotEncoder(handle_unknown='ignore'))
+    ]
+)
+categorical_rare_pipeline = Pipeline(
+    steps=[
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('rare_grouper', RareCategoryGrouper(min_freq=0.01, other_label='Other')),
+        ('ohe', OneHotEncoder(handle_unknown='ignore'))
     ]
 )
 
@@ -42,7 +54,9 @@ categorical_pipeline = Pipeline(
 preprocessor = ColumnTransformer(
     transformers=[
         ('num', numerical_pipeline, numerical_cols),    # name, pipeline, columns
-        ('cat', categorical_pipeline, categorical_cols)
+        ('cat', categorical_pipeline, categorical_cols),
+        ('make_rare', categorical_rare_pipeline, make_rare),
+        ('transmission_rare', categorical_rare_pipeline, transmission_rare)
     ]
 )
 
@@ -60,8 +74,8 @@ pipeline.fit(X_train, y_train)
 y_pred = pipeline.predict(X_test)
 
 # check what is encoded
-encoded_columns = pipeline.named_steps['preprocessor'].named_transformers_['cat'] \
-    ['encoder'].get_feature_names_out(categorical_cols)
+encoded_columns = pipeline.named_steps['preprocessor'].named_transformers_['make_rare'] \
+    ['ohe'].get_feature_names_out(make_rare)
 
 rmse = root_mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
@@ -71,6 +85,6 @@ print(f"R2: {r2:.2f}")
 print(f"MAE: {mae:.2f}")
 
 # %%
-joblib.dump(pipeline, os.path.join(data_folder, 'emission_model_pipeline.joblib'))
+joblib.dump(pipeline, os.path.join(data_folder, 'emission_model_pipeline.pkl'))
 
 # %%

@@ -2,10 +2,11 @@ import streamlit as st
 import joblib
 import numpy as np
 import pandas as pd
+from custom_transformers import RareCategoryGrouper
 
 
 def load_model():
-    model = joblib.load('emission_model_pipeline.joblib')
+    model = joblib.load('emission_model_pipeline.pkl')
     return model
 
 
@@ -15,14 +16,19 @@ def show_predict_page():
     st.write("""### Enter the vehicle details to predict CO2 emissions""")
 
     make_names = (
-        "Ford", "Chevrolet", "Mercedes-Benz", "Porsche", "GMC", "BMW", "Audi", "Toyota", "Honda", "Nissan"
+        'Acura', 'Alfa Romeo', 'Aston Martin', 'Audi', 'Bentley', 'BMW', 'Bugatti', 'Buick', 'Cadillac', \
+        'Chevrolet', 'Chrysler', 'Dodge', 'FIAT', 'Ford', 'Genesis', 'GMC', 'Honda', 'Hyundai', 'Infiniti', \
+        'Jaguar', 'Jeep', 'Kia', 'Lamborghini', 'Lexus', 'Lincoln', 'Maserati', 'Mazda', 'Mercedes-Benz', 'MINI', \
+        'Mitsubishi', 'Nissan', 'Porsche', 'Ram', 'Rolls-Royce', 'Subaru', 'Toyota', 'Volkswagen', 'Volvo'
     )
     vehicle_names = (
-        "SUV: Small", "SUV: Standard", "SUV", "Pickup truck: Standard", "Mid-size",
-        "Compact", "Subcompact", "Full-size", "Two-seater", "Minicompact"
+        'Compact', 'Two-seater', 'SUV: Small', 'Mid-size', 'Minicompact', 'SUV: Standard', 'Station wagon: Small', \
+        'Subcompact', 'Station wagon: Mid-size', 'Full-size', 'Pickup truck: Small', 'Pickup truck: Standard', \
+        'Minivan', 'Van: Passenger', 'Special purpose vehicle'
     )
     transmission_names = (
-        "AS8", "A9", "A8", "AS10", "AM7", "M6", "A10", "AS6", "AM8", "AV", "AV8", "AS9", "AV7"
+        'AM8', 'AM9', 'AS10', 'A8', 'A9', 'M7', 'AM7', 'AS8', 'M6', 'AS6', 'AV', 'AS9', 'A10', 'A6', 'M5', 'AV7', \
+        'AV1', 'AM6', 'AS7', 'AV8', 'AV6', 'AV10', 'AS5'
     )
 
     # Example input features - adjust based on actual model features
