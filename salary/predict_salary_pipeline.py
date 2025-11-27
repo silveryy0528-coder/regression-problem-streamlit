@@ -119,9 +119,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 pipeline.fit(X_train, y_train)
 y_pred = pipeline.predict(X_test)
 
-# encoded_columns = pipeline.named_steps['preprocessor'].named_transformers_['age'] \
-#     ['ore']
-# print(encoded_columns)
+encoded_columns = pipeline.named_steps['preprocessor'].named_transformers_['employment'] \
+    ['mhe'].get_feature_names_out()
+print(encoded_columns)
 
 rmse = root_mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
