@@ -165,3 +165,55 @@ class KFoldTargetEncoder(BaseEstimator, TransformerMixin):
 
         return oof_encoded.to_frame()
 
+
+class GenericOrdinalEncoder(BaseEstimator, TransformerMixin):
+    def __init__(self, mappings, unknown_value=np.nan, dtype=float):
+        """
+        mappings: dict
+            {column_name: [ordered category list]}
+        unknown_value: value to use for categories not in mapping
+        dtype: output dtype
+        """
+        self.mappings = mappings
+        self.unknown_value = unknown_value
+        self.dtype = dtype
+        self.encoders_ = {}
+
+    def fit(self, X, y=None):
+        # Convert to DataFrame if needed
+        if isinstance(X, pd.DataFrame):
+            Xdf = X.copy()
+        else:
+            X = np.asarray(X)
+            if X.ndim == 1:
+                X = X.reshape(-1, 1)
+            # assign column names from mappings
+            Xdf = pd.DataFrame(X, columns=list(self.mappings.keys()))
+
+        # build encoders
+        for col, order_list in self.mappings.items():
+            self.encoders_[col] = {cat: i for i, cat in enumerate(order_list)}
+
+        return self
+
+    def transform(self, X):
+        # Convert to DataFrame if needed
+        if isinstance(X, pd.DataFrame):
+            Xdf = X.copy()
+        else:
+            X = np.asarray(X)
+            if X.ndim == 1:
+                X = X.reshape(-1, 1)
+            Xdf = pd.DataFrame(X, columns=list(self.mappings.keys()))
+
+        out_cols = []
+        for col, encoder in self.encoders_.items():
+            mapped = Xdf[col].map(encoder)
+            if not pd.isna(self.unknown_value):
+                mapped = mapped.fillna(self.unknown_value)
+            out_cols.append(mapped.astype(self.dtype))
+
+        out_df = pd.concat(out_cols, axis=1)
+        out_df.columns = list(self.encoders_.keys())
+        return out_df
+# %%
