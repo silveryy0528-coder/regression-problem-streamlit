@@ -1,5 +1,4 @@
-explore_data.py
 .venv*
 survey_results_public.csv
 __pycache__/
-stack*
+salary/stackover*

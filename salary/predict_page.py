@@ -18,7 +18,7 @@ def show_predict_page():
     st.write("""### Enter the personal details to predict salary in USD""")
     pipeline = load_model()
 
-    df = pd.read_csv('stackoverflow_salary.csv')
+    df = pd.read_csv('salary_data_cleaned.csv')
     df['Country'] = df['Country'].fillna('Other')
 
     country_options = sorted(df['Country'].unique())
