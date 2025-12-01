@@ -11,9 +11,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
+from sklearn.linear_model import Lasso
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import root_mean_squared_error, r2_score, mean_absolute_error
-sys.path.insert(0, '..')
+sys.path.insert(0, r'C:\Users\YanGuo\Documents\regression-problem-streamlit')
 from utils.custom_transformers import RareCategoryGrouper, QuantileClipper, MultiHotEncoder, GenericOrdinalEncoder
 
 
@@ -50,7 +51,8 @@ country_pipeline = Pipeline(
 years_pipeline = Pipeline(
     steps=[
         ('imputer', SimpleImputer(strategy='median')),
-        ('clipper', QuantileClipper(lower=0.01, upper=0.99))
+        ('clipper', QuantileClipper(lower=0.01, upper=0.99)),
+        ('scalar', StandardScaler())
     ]
 )
 employment_pipeline = Pipeline(
@@ -106,10 +108,12 @@ preprocessor = ColumnTransformer(
     ]
 )
 
+# regressor = GradientBoostingRegressor(random_state=42)
+regressor = Lasso()
 pipeline = Pipeline(
     steps=[
         ('preprocessor', preprocessor),
-        ('regressor', GradientBoostingRegressor(random_state=42))
+        ('regressor', regressor)
     ]
 )
 
@@ -119,10 +123,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 pipeline.fit(X_train, y_train)
 y_pred = pipeline.predict(X_test)
 
-encoded_columns = pipeline.named_steps['preprocessor'].named_transformers_['employment'] \
-    ['mhe'].get_feature_names_out()
-print(encoded_columns)
-
 rmse = root_mean_squared_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 mae = mean_absolute_error(y_test, y_pred)
@@ -130,5 +130,17 @@ print(f"RMSE: {rmse:.2f}")
 print(f"R2: {r2:.2f}")
 print(f"MAE: {mae:.2f}")
 
+
 # %%
 joblib.dump(pipeline, os.path.join(data_folder, 'salary_model_pipeline.pkl'))
+
+feature_names = list(pipeline.named_steps['preprocessor'].named_transformers_['country']['ohe'].get_feature_names_out()) \
+    + ['YearsCodePro'] \
+    + list(pipeline.named_steps['preprocessor'].named_transformers_['employment']['mhe'].get_feature_names_out()) \
+    + ['Organization', 'Age']
+
+feature_importance = pd.DataFrame({
+    'features': feature_names,
+    'importance': pipeline.named_steps['regressor'].coef_})
+print(feature_importance)
+# %%
